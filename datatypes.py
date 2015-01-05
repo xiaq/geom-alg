@@ -311,6 +311,26 @@ class Graph(object):
             g.add_vertex(p[0], p[1], label)
 
         return g
+        
+    @classmethod
+    def from_data_challenge(cls, filename):
+        g = cls()
+        
+        with open(filename, "r") as f:
+            nr_points = int(f.readline().strip("\r\n"))
+            ratio_a_b = map(int, f.readline().strip("\r\n").split())
+            
+            for line in f.readlines():
+                if not line:
+                    continue
+                    
+                x, y = map(int, line.strip("\r\n").split())
+                g.add_vertex(x,y)
+                
+        if g.n_vertices() != nr_points:
+            print "Warning: there should be %s points but %s were read from the file." % (nr_points, g.n_vertices())
+            
+        return g, float(ratio_a_b[0]) / float(ratio_a_b[1])
 
 if __name__ == "__main__":
     import random
