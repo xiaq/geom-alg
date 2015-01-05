@@ -70,6 +70,10 @@ class Graph(object):
         self.edges[v1.id].append(edge)
         self.edges[v2.id].append(edge)
         
+    def clear_edges(self):
+        for idx in xrange(self.n_vertices()):
+            self.edges[idx] = []
+        
     def n_vertices(self):
         return self.n
         
@@ -147,6 +151,17 @@ class Graph(object):
             vertex = vertex.id
         return min((edge.length, edge.other(vertex)) for edge in self.edges[vertex])[1] if self.edges[vertex] else None
         
+    def euclidian_distance(self, v, w, squared=False):
+        if type(v) == int:
+            v = self.vertices[v]
+        if type(w) == int:
+            w = self.vertices[w]
+    
+        if squared:
+            return (v.x-w.x)**2 + (v.y-w.y)**2
+        else:
+            return ((v.x-w.x)**2 + (v.y-w.y)**2)**0.5
+        
     def bfs_distance(self, start, end, maxlen=None):
         """Computes and returns the distance from node 'start' to node 'end'. If no path
         between them exists, returns None. Specify end=None to compute the distance from
@@ -171,6 +186,7 @@ class Graph(object):
         # array because we will access all nodes (and also because that is what we'll be returning).
         if end is None:
             import numpy as np
+            
             D = np.zeros((self.n_vertices(),))
         else:
             D = {} # dictionary of final distances
@@ -202,16 +218,36 @@ class Graph(object):
             return D
         else:
             if end.id in D and (maxlen is None or D[end.id] <= maxlen):
-                #print "not return none"
                 return D[end.id]
             else:
                 return None
             
     def dilation_ratio(self):
+        """Returns the dilation ratio of the graph, which is the largest dilation
+        ratio between any two nodes in the graph. Returns None if the graph is
+        disconnected."""
+    
         import numpy as np
         
-        # Do single-source distances to all other points in O(n log n) time, then compare then all to the Euclidian distances
-        euclidian = np.empty((self.n_vertices(),))
+        dilation_max = 1
+        
+        for v in xrange(self.n_vertices()):
+            # Do single-source distances to all other points in O(n log n) time, then compare then all to the Euclidian distances
+            graph_dist = self.bfs_distance(v, None)
+            
+            # Compute all Euclidian distances, and see if the dilation for this pair is greater than dilation_max
+            # No need to check lower half of the triangle (including diagonal)
+            for w in xrange(v+1, self.n_vertices()):
+                # If v != w and graph_dist[w.id]=0 then w is unreachable from v
+                if graph_dist[w] == 0:
+                    return None
+                    
+                euclidian_dist = self.euclidian_distance(v, w)
+                dilation = graph_dist[w] / euclidian_dist
+                if dilation > dilation_max:
+                    dilation_max = dilation
+                    
+        return dilation_max
             
     def plot(self):
         import matplotlib.pyplot as plt
@@ -290,7 +326,7 @@ if __name__ == "__main__":
         if id1 == id2:
             continue
             
-        g.add_edge(id1, id2, True)
+        #g.add_edge(id1, id2, True)
 
     g_trivial = Graph()
     g_trivial.add_vertex(1,1)
