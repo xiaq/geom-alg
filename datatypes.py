@@ -80,6 +80,14 @@ class Graph(object):
     def n_edges(self):
         return int(0.5 * sum(len(edges) for edges in self.edges))
         
+    def weight(self):
+        """Computes and returns the sum of the length of all edges."""
+        
+        return sum(edge.length for edge in self.iter_edges())
+        
+    def max_edge_degree(self):
+        return max(len(e_lst) for e_lst in self.edges)
+        
     def numpy_coordinates(self):
         """Returns the coordinates of all vertices in this graph in a numpy n-by-2 matrix."""
     
@@ -172,7 +180,9 @@ class Graph(object):
         Optionally, maxlen may be specified in which case the algorithm will optimize to
         not further explore paths longer than maxlen. If maxlen is specified it will never
         return a path length of more than maxlen, or set such a value in the return array
-        if end=None."""
+        if end=None.
+        
+        Time complexity is O(|E| log |V|) (for |E|>|V|)."""
 
         if type(start) == int:
             start = self.vertices[start]
@@ -225,7 +235,9 @@ class Graph(object):
     def dilation_ratio(self):
         """Returns the dilation ratio of the graph, which is the largest dilation
         ratio between any two nodes in the graph. Returns None if the graph is
-        disconnected."""
+        disconnected.
+        
+        Time complexity is O(|V|*|E|*log |V|)"""
     
         import numpy as np
         
@@ -248,6 +260,12 @@ class Graph(object):
                     dilation_max = dilation
                     
         return dilation_max
+        
+    def nr_intersections(self):
+        """Computes and returns the number of intersections between edges
+        in this graph."""
+        
+        return 0 # Not implemented
             
     def plot(self):
         import matplotlib.pyplot as plt
@@ -324,13 +342,25 @@ class Graph(object):
                 if not line:
                     continue
                     
-                x, y = map(int, line.strip("\r\n").split())
+                x, y = map(float, line.strip("\r\n").split())
                 g.add_vertex(x,y)
                 
         if g.n_vertices() != nr_points:
             print "Warning: there should be %s points but %s were read from the file." % (nr_points, g.n_vertices())
             
         return g, float(ratio_a_b[0]) / float(ratio_a_b[1])
+        
+    def to_data_challenge(self, filename, dilation_ratio=1):
+        """Serializes the vertices in this graph (not the edges!) to a data
+        challenge file. A data challenge file needs some dilation ratio with
+        it, this can be specified in the dilation_ratio parameter."""
+        
+        with open(filename, "w") as f:
+            f.write("%d\n" % self.n_vertices())
+            f.write("%d 1000\n" % int(dilation_ratio * 1000)) # Arbitrary dilation ratio
+            
+            for v in self.vertices:
+                f.write("%s %s\n" % (v.x, v.y))
 
 if __name__ == "__main__":
     import random
