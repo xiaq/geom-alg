@@ -28,6 +28,7 @@ class Edge(object):
             return self.v1
         
 class Graph(object):
+    # This class is not thread-safe.
 
     def __init__(self):
         self.vertices = []
@@ -35,6 +36,12 @@ class Graph(object):
         self.n = 0
         
     def add_vertex(self, x, y, label=None):
+        """Adds a vertex with given coordinates and label. Returns the vertex ID
+        that can be used to refer to it later with functions like add_edge.
+        
+        Vertex IDs are guaranteed to be successive numbers starting at zero, so they
+        can be used as array indices, for example."""
+    
         id = self.n
         self.n += 1
         self.vertices.append(Vertex(x=x, y=y, id=id, label=label))
@@ -142,44 +149,69 @@ class Graph(object):
         
     def bfs_distance(self, start, end, maxlen=None):
         """Computes and returns the distance from node 'start' to node 'end'. If no path
-        between them exists, returns None.
+        between them exists, returns None. Specify end=None to compute the distance from
+        'start' to all other nodes. In that case, the return value is a Numpy-array such
+        that array[i]=bfs_distance(start, i, maxlen), only the vertices to which no path
+        (shorter than maxlen) was found will be set to 0 instead of None.
         
         Optionally, maxlen may be specified in which case the algorithm will optimize to
         not further explore paths longer than maxlen. If maxlen is specified it will never
-        return a path length of more than maxlen."""
+        return a path length of more than maxlen, or set such a value in the return array
+        if end=None."""
 
         if type(start) == int:
             start = self.vertices[start]
         if type(end) == int:
             end = self.vertices[end]
-
+            
         # Based on http://code.activestate.com/recipes/119466-dijkstras-algorithm-for-shortest-paths/
-    
-        D = {} # dictionary of final distances
+        
+        # Determine variable that will hold distances. If end is specified, we take a dictionary
+        # because we assume that we will not visit most nodes. If end is not specified we take an
+        # array because we will access all nodes (and also because that is what we'll be returning).
+        if end is None:
+            import numpy as np
+            D = np.zeros((self.n_vertices(),))
+        else:
+            D = {} # dictionary of final distances
+        
         Q = PriorityDictionary() # est.dist. of non-final vert.
-        Q[start] = 0
+        Q[start.id] = 0
         
         while Q:
             v = Q.smallest()
             D[v] = Q[v]
             Q.pop_smallest()
             
-            if v == end: 
+            # Stop searching if we have an end node
+            if end is not None and v == end.id:
                 break
             
             for w, dist in self.iter_neighbors(v):
                 vwLength = D[v] + dist
-                if (maxlen is None or vwLength <= maxlen) and w not in D and (w not in Q or vwLength < Q[w]):
-                    Q[w] = vwLength
-                else:
-                    pass
-                    #print "Not appending", D, (maxlen is None or vwLength <= maxlen), w not in D, (w not in Q or vwLength < Q[w])
+                if ((maxlen is None or vwLength <= maxlen) # This checks that the discovered path is not longer than maxlen
+                        and (end is None or w.id not in D)    # This, combined with the next line, checks whether w is not yet in D
+                        and (end is not None or (w.id != start.id and D[w.id] == 0))
+                        and (w.id not in Q or vwLength < Q[w.id])): # This checks whether we already have a shorter path to w in Q
+                        
+                    Q[w.id] = vwLength
+                
+                # Otherwise we already have a path to w that is shorter _or_ the path we just discovered is too long
         
-        if end in D and (maxlen is None or D[end] <= maxlen):
-            #print "not return none"
-            return D[end]
+        if end is None:
+            return D
         else:
-            return None
+            if end.id in D and (maxlen is None or D[end.id] <= maxlen):
+                #print "not return none"
+                return D[end.id]
+            else:
+                return None
+            
+    def dilation_ratio(self):
+        import numpy as np
+        
+        # Do single-source distances to all other points in O(n log n) time, then compare then all to the Euclidian distances
+        euclidian = np.empty((self.n_vertices(),))
             
     def plot(self):
         import matplotlib.pyplot as plt
@@ -245,7 +277,6 @@ class Graph(object):
         return g
 
 if __name__ == "__main__":
-    import numpy as np
     import random
     g = Graph()
     
@@ -260,3 +291,10 @@ if __name__ == "__main__":
             continue
             
         g.add_edge(id1, id2, True)
+
+    g_trivial = Graph()
+    g_trivial.add_vertex(1,1)
+    g_trivial.add_vertex(1,2)
+    g_trivial.add_vertex(2,2)
+    g_trivial.add_edge(0,1)
+    g_trivial.add_edge(1,2)
