@@ -19,7 +19,7 @@ def yao_graph(graph, dilation):
     for v in graph.vertices:
         fs = sorted(
             (int(math.floor(math.atan2(u.y - v.y, u.x - v.x) / theta)),
-             d(u, v), u) for u in graph.vertices)
+             d(u, v), u) for u in graph.vertices if u.id != v.id)
 
         for k, g in itertools.groupby(fs, operator.itemgetter(0)):
             graph.add_edge(v, next(g)[2])
