@@ -7,9 +7,9 @@ from datatypes import Graph
 def unit_vector(d):
     return (math.cos(d), math.sin(d))
 
-def yao_graph(graph, dilation):
+def theta_graph(graph, dilation):
     """
-    Construct a Yao graph that is a t-spanner (t = dilation).
+    Construct a Theta graph that is a t-spanner (t = dilation).
     """
     # Find a suitable k
     theta = math.asin(1 - 1.0/(dilation**2))
@@ -46,5 +46,5 @@ if __name__ == "__main__":
     #g = Graph.random_graph(100, 0)
     g = Graph.labeled_datapoints_graph({k: v for k, v in s.iteritems() if v is not None})
     #g = Graph.datapoints_graph((v for v in s.values() if v is not None))
-    yao_graph(g, 1.3)
+    theta_graph(g, 1.3)
     g.plot()

@@ -4,6 +4,7 @@ import sys
 
 from greedy_spanner import greedy_spanner
 from yao import yao_graph
+from theta import theta_graph
 from datatypes import Graph
 
 from data.train_stations import train_stations_by_label_luxembourg, train_stations_by_label_netherlands
@@ -23,8 +24,8 @@ for n in range(1,7): #(1..6)
     GRAPHS["Data challenge %d" % n] = Graph.from_data_challenge("data/B%d.txt" % n)[0]
 
 # Algorithms
-ALGOS = {"Greedy": greedy_spanner, "Yao": yao_graph}
-ALGO_MAX_SIZE = {"Greedy": 350, "Yao": 3000}
+ALGOS = {"Greedy": greedy_spanner, "Yao": yao_graph, "Theta": theta_graph}
+ALGO_MAX_SIZE = {"Greedy": 350, "Yao": 3000, "Theta": 3000}
 
 # Dilation ratios
 RATIOS = (1.3, 1.5, 1.75, 2, 2.5, 3, 4, 5)
