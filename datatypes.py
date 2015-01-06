@@ -170,7 +170,7 @@ class Graph(object):
         else:
             return ((v.x-w.x)**2 + (v.y-w.y)**2)**0.5
         
-    def bfs_distance(self, start, end, maxlen=None):
+    def bfs_distance(self, start, end, maxlen=None, weighted=True):
         """Computes and returns the distance from node 'start' to node 'end'. If no path
         between them exists, returns None. Specify end=None to compute the distance from
         'start' to all other nodes. In that case, the return value is a Numpy-array such
@@ -181,6 +181,10 @@ class Graph(object):
         not further explore paths longer than maxlen. If maxlen is specified it will never
         return a path length of more than maxlen, or set such a value in the return array
         if end=None.
+        
+        Weighted may be set to False to not take edge lengths into account, in this case
+        the result will be an integer which states the amount of edges from on the shortest
+        path. The meaning of maxlen does not change.
         
         Time complexity is O(|E| log |V|) (for |E|>|V|)."""
 
@@ -196,7 +200,6 @@ class Graph(object):
         # array because we will access all nodes (and also because that is what we'll be returning).
         if end is None:
             import numpy as np
-            
             D = np.zeros((self.n_vertices(),))
         else:
             D = {} # dictionary of final distances
@@ -214,7 +217,11 @@ class Graph(object):
                 break
             
             for w, dist in self.iter_neighbors(v):
-                vwLength = D[v] + dist
+                if weighted:
+                    vwLength = D[v] + dist
+                else:
+                    vwLength = D[v] + 1
+                    
                 if ((maxlen is None or vwLength <= maxlen) # This checks that the discovered path is not longer than maxlen
                         and (end is None or w.id not in D)    # This, combined with the next line, checks whether w is not yet in D
                         and (end is not None or (w.id != start.id and D[w.id] == 0))
@@ -260,6 +267,24 @@ class Graph(object):
                     dilation_max = dilation
                     
         return dilation_max
+        
+    def diameter(self):
+        """Returns the dilation ratio of the graph, which is the largest dilation
+        ratio between any two nodes in the graph. Returns None if the graph is
+        disconnected.
+        
+        Time complexity is O(|V|*|E|*log |V|)"""
+    
+        import numpy as np
+        
+        diameter = 1
+        
+        for v in xrange(self.n_vertices()):
+            graph_dist = self.bfs_distance(v, None, None, False)
+            eccentricity = max(graph_dist)
+            diameter = max((diameter, eccentricity))
+                    
+        return diameter        
         
     def nr_intersections(self):
         """Computes and returns the number of intersections between edges
