@@ -31,22 +31,3 @@ if __name__ == "__main__":
     #g = Graph.datapoints_graph((v for v in s.values() if v is not None))
     greedy_spanner(g, 1.3)
     g.plot()
-    
-
-##    print "Dilation;#Vertices;#Edges in result;% of edges in result;Construction time"
-##
-##    for r in (1.5, 1.75, 2, 2.5, 3, 4, 5):
-##        for n in range(25, 351, 25):
-##            for i in range(3):
-##                try:
-##                    g = Graph()
-##                    
-##                    for i in xrange(n):
-##                        g.add_vertex(random.random() * 100, random.random() * 100)
-##
-##                    t = time.clock()    
-##                    greedy_spanner(g, r)
-##                    t = time.clock() - t
-##                    print "%f;%d;%d;%f;%f" % (r, n, g.n_edges(), 2.0*g.n_edges()/(n*(n-1)), t)
-##                except:
-##                    print "%f;%d;-;-;-" % (r, n)
