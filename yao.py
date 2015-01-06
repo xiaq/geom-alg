@@ -5,7 +5,7 @@ import itertools
 from datatypes import Graph
 
 def d(u, v):
-    return math.sqrt((u.x-v.x)**2 + (u.y-v.y)**2)
+    return (u.x-v.x)**2 + (u.y-v.y)**2
 
 def yao_graph(graph, dilation):
     """
