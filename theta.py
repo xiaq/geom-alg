@@ -4,8 +4,8 @@ import itertools
 
 from datatypes import Graph
 
-def d(u, v):
-    return math.sqrt((u.x-v.x)**2 + (u.y-v.y)**2)
+def unit_vector(d):
+    return (math.cos(d), math.sin(d))
 
 def yao_graph(graph, dilation):
     """
@@ -15,13 +15,23 @@ def yao_graph(graph, dilation):
     theta = math.asin(1 - 1.0/(dilation**2))
     k = int(math.ceil(2*math.pi / theta))
     theta = 2*math.pi / k
+    bisectors = [unit_vector((c+0.5)/k * 2*math.pi) for c in range(k)]
 
     for v in graph.vertices:
-        fs = sorted(
-            (int(math.floor(math.atan2(u.y - v.y, u.x - v.x) / theta)),
-             d(u, v), u) for u in graph.vertices if u.id != v.id)
+        # for each point u, find the cone u is in, the distance of the
+        # projection of u on the bisector to v
+        fs = []
+        for u in graph.vertices:
+            if u == v:
+                continue
+            c = int(math.floor(math.atan2(u.y - v.y, u.x - v.x) / theta))
+            b = bisectors[c]
+            d = (u.x - v.x) * b[0] + (u.y - v.y) * b[1]
+            if d <= 0:
+                break
+            fs.append((c, d, u))
 
-        for c, g in itertools.groupby(fs, operator.itemgetter(0)):
+        for c, g in itertools.groupby(sorted(fs), operator.itemgetter(0)):
             graph.add_edge(v, next(g)[2])
 
 if __name__ == "__main__":
