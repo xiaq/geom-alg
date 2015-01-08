@@ -4,7 +4,7 @@ import itertools
 
 from datatypes import Graph
 
-def d(u, v):
+def distance(u, v):
     return (u.x-v.x)**2 + (u.y-v.y)**2
 
 def yao_graph(graph, dilation):
@@ -17,12 +17,19 @@ def yao_graph(graph, dilation):
     theta = 2*math.pi / k
 
     for v in graph.vertices:
-        fs = sorted(
-            (int(math.floor(math.atan2(u.y - v.y, u.x - v.x) / theta)),
-             d(u, v), u) for u in graph.vertices if u.id != v.id)
+        ts = [None] * k
+        for u in graph.vertices:
+            if u == v:
+                continue
+            c = int(math.floor(math.atan2(u.y - v.y, u.x - v.x) / theta))
+            d = distance(u, v)
+            if ts[c] is None or ts[c][0] > d:
+                ts[c] = (d, u)
 
-        for c, g in itertools.groupby(fs, operator.itemgetter(0)):
-            graph.add_edge(v, next(g)[2])
+        for t in ts:
+            if t is None:
+                continue
+            graph.add_edge(v, t[1])
 
 if __name__ == "__main__":
     import random

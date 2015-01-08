@@ -20,7 +20,7 @@ def theta_graph(graph, dilation):
     for v in graph.vertices:
         # for each point u, find the cone u is in, the distance of the
         # projection of u on the bisector to v
-        fs = []
+        ts = [None] * k
         for u in graph.vertices:
             if u == v:
                 continue
@@ -28,11 +28,14 @@ def theta_graph(graph, dilation):
             b = bisectors[c]
             d = (u.x - v.x) * b[0] + (u.y - v.y) * b[1]
             if d <= 0:
-                break
-            fs.append((c, d, u))
+                raise Exception('d <= 0!')
+            if ts[c] is None or ts[c][0] > d:
+                ts[c] = (d, u)
 
-        for c, g in itertools.groupby(sorted(fs), operator.itemgetter(0)):
-            graph.add_edge(v, next(g)[2])
+        for t in ts:
+            if t is None:
+                continue
+            graph.add_edge(v, t[1])
 
 if __name__ == "__main__":
     import random
