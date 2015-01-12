@@ -3,7 +3,7 @@ from itertools import izip
 
 def greedy_spanner(graph, dilation):
     """Adds edges to graph until its dilation ratio is less than dilation.
-    Takes O(n^2 * (n log(n) + k) time, where k is the amount of inserted edges."""
+    Takes O(n^2 * log(n) * (n log(n) + k) time, where k is the amount of inserted edges."""
 
     idxs, pairs = graph.iter_closest_euclidian_node_pairs()
     

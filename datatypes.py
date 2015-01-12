@@ -175,7 +175,7 @@ class Graph(object):
         between them exists, returns None. Specify end=None to compute the distance from
         'start' to all other nodes. In that case, the return value is a Numpy-array such
         that array[i]=bfs_distance(start, i, maxlen), only the vertices to which no path
-        (shorter than maxlen) was found will be set to 0 instead of None.
+        (shorter than maxlen) was found will be set to -1 instead of None.
         
         Optionally, maxlen may be specified in which case the algorithm will optimize to
         not further explore paths longer than maxlen. If maxlen is specified it will never
@@ -200,7 +200,7 @@ class Graph(object):
         # array because we will access all nodes (and also because that is what we'll be returning).
         if end is None:
             import numpy as np
-            D = np.zeros((self.n_vertices(),))
+            D = np.ones((self.n_vertices(),)) * -1
         else:
             D = {} # dictionary of final distances
         
@@ -224,7 +224,7 @@ class Graph(object):
                     
                 if ((maxlen is None or vwLength <= maxlen) # This checks that the discovered path is not longer than maxlen
                         and (end is None or w.id not in D)    # This, combined with the next line, checks whether w is not yet in D
-                        and (end is not None or (w.id != start.id and D[w.id] == 0))
+                        and (end is not None or D[w.id] == -1)
                         and (w.id not in Q or vwLength < Q[w.id])): # This checks whether we already have a shorter path to w in Q
                         
                     Q[w.id] = vwLength
@@ -244,6 +244,9 @@ class Graph(object):
         ratio between any two nodes in the graph. Returns None if the graph is
         disconnected.
         
+        Note: Returns infinity if there are duplicate points which are not connected
+        directly (when the euclidian distance is zero and the graph distance is positive).
+        
         Time complexity is O(|V|*|E|*log |V|)"""
     
         import numpy as np
@@ -258,11 +261,21 @@ class Graph(object):
             # No need to check lower half of the triangle (including diagonal)
             for w in xrange(v+1, self.n_vertices()):
                 # If v != w and graph_dist[w.id]=0 then w is unreachable from v
-                if graph_dist[w] == 0:
+                if graph_dist[w] == -1:
                     return None
                     
                 euclidian_dist = self.euclidian_distance(v, w)
-                dilation = graph_dist[w] / euclidian_dist
+                if euclidian_dist > 0:
+                    dilation = graph_dist[w] / euclidian_dist
+                else:
+                    if graph_dist[w] == 0:
+                        dilation = 1
+                    else:
+                        # We found a point with infinite dilation, no need to process
+                        # the rest of the points because you can't get higher dilation
+                        # than infinity.
+                        return np.inf
+                    
                 if dilation > dilation_max:
                     dilation_max = dilation
                     
