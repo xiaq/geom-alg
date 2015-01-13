@@ -50,7 +50,6 @@ def wsPairs(u, v, s):
         return []
     elif is_well_separated(u,v,s) and u != v:
         return [(u.points[0], v.points[0])]
-        #return [(_centerOfPoints(u.points), _centerOfPoints(v.points))]
     else:
         if u.depth > v.depth:
             temp = v
@@ -59,26 +58,46 @@ def wsPairs(u, v, s):
         pairs = []
 
         if u.children != None:
-            for child in u.children:
-                pairs.extend(wsPairs(child, v, s))
-        elif v.children != None:
+            if u == v:
+                # Make sure to not recurse on the same pair twice to
+                # prevent the same wspd-pairs being generated
+                pairs.extend(wsPairs(u.children[0], v.children[0], s))
+                pairs.extend(wsPairs(u.children[0], v.children[1], s))
+                pairs.extend(wsPairs(u.children[0], v.children[2], s))
+                pairs.extend(wsPairs(u.children[0], v.children[3], s))
+                pairs.extend(wsPairs(u.children[1], v.children[1], s))
+                pairs.extend(wsPairs(u.children[1], v.children[2], s))
+                pairs.extend(wsPairs(u.children[1], v.children[3], s))
+                pairs.extend(wsPairs(u.children[2], v.children[2], s))
+                pairs.extend(wsPairs(u.children[2], v.children[3], s))
+                pairs.extend(wsPairs(u.children[3], v.children[3], s))
+            else:
+                for child in u.children:
+                    pairs.extend(wsPairs(child, v, s))
+                    
+        elif v.children != None: # u is a leaf but v still has points so check if we can recurse on v
             temp = v
             v = u
             u = temp
 
-            for child in u.children:
-                pairs.extend(wsPairs(child, v, s))
+            if u == v:
+                # Make sure to not recurse on the same pair twice to
+                # prevent the same wspd-pairs being generated
+                pairs.extend(wsPairs(u.children[0], v.children[0], s))
+                pairs.extend(wsPairs(u.children[0], v.children[1], s))
+                pairs.extend(wsPairs(u.children[0], v.children[2], s))
+                pairs.extend(wsPairs(u.children[0], v.children[3], s))
+                pairs.extend(wsPairs(u.children[1], v.children[1], s))
+                pairs.extend(wsPairs(u.children[1], v.children[2], s))
+                pairs.extend(wsPairs(u.children[1], v.children[3], s))
+                pairs.extend(wsPairs(u.children[2], v.children[2], s))
+                pairs.extend(wsPairs(u.children[2], v.children[3], s))
+                pairs.extend(wsPairs(u.children[3], v.children[3], s))
+            else:
+                for child in u.children:
+                    pairs.extend(wsPairs(child, v, s))
             
         return pairs
-
-def _centerOfPoints(points):
-    """
-    Returns the arithmetic mean of the points.
-    This means the returned point does not have to be part of the set of points.
-    """
-    bb = bounding_box(points)
-
-    return Point((bb['xMin'] + bb['xMax'])/float(2), (bb['yMin'] + bb['yMax'])/float(2))
 
 def wspd_spanner(graph, dilation):
     """
@@ -91,12 +110,13 @@ def wspd_spanner(graph, dilation):
     wspd_pairs = wsPairs(quadtree, quadtree, s)
 
     for pair in wspd_pairs:
-        graph.add_edge(pair[0].id, pair[1].id, True)
+        graph.add_edge(pair[0].id, pair[1].id, False)
 
     #graph.plot()
 
 
-""" interesting points:
+#interesting points:
+""" 
 points = [
 Point(11.42345273512,8.1526698833),
 Point(80.8117542451,86.1762624158),
@@ -107,6 +127,15 @@ g = Graph()
 for p in points:
     g.add_vertex(p.x, p.y)
 
-wspd_spanner(g, dilation = 5) 
-"""
+g2 = Graph.random_graph(700, 0)
 
+import time
+
+t_start = time.clock()
+wspd_spanner(g2, dilation = 3) 
+t_elapsed = time.clock() - t_start
+
+print t_elapsed
+
+print g2.numDoubleEdges
+"""
