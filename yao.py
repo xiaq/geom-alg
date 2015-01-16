@@ -29,7 +29,7 @@ def yao_graph(graph, dilation):
         for t in ts:
             if t is None:
                 continue
-            graph.add_edge(v, t[1])
+            graph.add_edge(v, t[1], True)
 
 if __name__ == "__main__":
     import random
@@ -44,4 +44,5 @@ if __name__ == "__main__":
     g = Graph.labeled_datapoints_graph({k: v for k, v in s.iteritems() if v is not None})
     #g = Graph.datapoints_graph((v for v in s.values() if v is not None))
     yao_graph(g, 1.3)
+    print g.nr_intersections()
     g.plot()

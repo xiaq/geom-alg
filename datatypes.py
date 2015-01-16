@@ -1,9 +1,29 @@
 from collections import namedtuple
 from priodict import PriorityDictionary
 from itertools import chain
-import heapq
+from heapq import heappush, heappop
+import bisect
+from blist import *
 
-Vertex = namedtuple('Vertex', ['x', 'y', 'id', 'label'])
+class Vertex(namedtuple('Vertex', ['x', 'y', 'id', 'label'])):
+    def __cmp__(self, other):
+        if isinstance(other, Vertex):
+            return cmp((self.y, self.x), (other.y, other.x))
+        elif isinstance(other, Edge):
+            if other.v1 < other.v2:
+                x1, y1 = other.v1.x, other.v1.y
+                x2, y2 = other.v2.x, other.v2.y
+            else:
+                x1, y1 = other.v2.x, other.v2.y
+                x2, y2 = other.v1.x, other.v1.y
+            return cmp((y2 - y1) * self.x - (x2 - x1) * self.y,
+                       (y2 - y1) * x1     - (x2 - x1) * y1)
+        else:
+            raise TypeError('Vertex can only be compared to Vertex or Edge')
+            
+Event = namedtuple('Event', ['vertex', 'edge1', 'edge2', 'type'])
+
+START, END, INTERSECT = range(3)
 
 class Edge(object):
 
@@ -16,9 +36,6 @@ class Edge(object):
         self.length_sq = (v1.x - v2.x)**2 + (v1.y - v2.y)**2
         self.length = self.length_sq**0.5
         
-    def __cmp__(self, other):
-        return cmp(self.length_sq, other.length_sq)
-
     def other(self, v):
         """Returns, given one endpoint of the edge, the other endpoint."""
         
@@ -26,7 +43,42 @@ class Edge(object):
             return self.v2
         else:
             return self.v1
-        
+     
+    def __repr__(self):
+        return 'Edge(%r, %r, %f, %f)' % (self.v1, self.v2, self.length_sq, self.length)
+
+def getLineIntersection(edge1, edge2):
+    """ 
+    Returns the intersection point if the lines intersect, otherwise None. Based on: http://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
+    """
+    if edge1.v1 in (edge2.v1, edge2.v2) or edge1.v2 in (edge2.v1, edge2.v2):
+        return None
+    p0_x, p0_y = edge1.v1.x, edge1.v1.y
+    p1_x, p1_y = edge1.v2.x, edge1.v2.y
+    p2_x, p2_y = edge2.v1.x, edge2.v1.y
+    p3_x, p3_y = edge2.v2.x, edge2.v2.y
+    
+    s1_x = p1_x - p0_x
+    s1_y = p1_y - p0_y
+    s2_x = p3_x - p2_x
+    s2_y = p3_y - p2_y
+
+    try:
+        s = (-s1_y * (p0_x - p2_x) + s1_x * (p0_y - p2_y)) / float(-s2_x * s1_y + s1_x * s2_y)
+        t = ( s2_x * (p0_y - p2_y) - s2_y * (p0_x - p2_x)) / float(-s2_x * s1_y + s1_x * s2_y)
+    except:
+        print edge1
+        print edge2
+        raise
+
+    if 1e-4 < s < 1-1e-4 and 1e-4 < t < 1-1e-4:
+        # Collision detected
+        i_x = p0_x + (t * s1_x);
+        i_y = p0_y + (t * s1_y);
+        return Vertex(i_x, i_y, -1, None)
+
+    return None # No collision
+
 class Graph(object):
     # This class is not thread-safe.
 
@@ -297,13 +349,105 @@ class Graph(object):
             eccentricity = max(graph_dist)
             diameter = max((diameter, eccentricity))
                     
-        return diameter        
+        return diameter
         
     def nr_intersections(self):
+        """
+        Returns the number of intersections of the graph using a brute force way.
+        """
+        numIntersections = 0
+        print len(list(self.iter_edges()))
+        for edge1 in self.iter_edges():
+            for edge2 in self.iter_edges():
+                if edge1.v1.id >= edge2.v1.id:
+                    continue
+                intersection = getLineIntersection(edge1, edge2)
+                
+                if intersection is not None:
+                    #yield intersection
+                    numIntersections += 1
+        
+        return numIntersections
+        
+    def nr_intersectionsSweepLine(self):
         """Computes and returns the number of intersections between edges
         in this graph."""
         
-        return 0 # Not implemented
+        T = blist([])
+        Q = []
+        for edge in self.iter_edges():
+            if edge.v1 < edge.v2:
+                heappush(Q, Event(edge.v1, edge, None, START))
+                heappush(Q, Event(edge.v2, edge, None, END))
+        
+        numIntersections = 0
+        lastPopped = None
+        while len(Q) > 0:
+            while True:
+                event = heappop(Q)
+                if event != lastPopped:
+                    lastPopped = event
+                    break
+            
+            if event.type == START:
+                i = bisect.bisect_left(T, event.vertex)
+                T.insert(i, event.edge1)
+                
+                if i - 1 >= 0:
+                    intersectionLeft = getLineIntersection(event.edge1, T[i-1])
+                    if intersectionLeft is not None:
+                        # insert in Q
+                        heappush(Q, Event(intersectionLeft, event.edge1, T[i-1], INTERSECT))
+                
+                if i + 1 < len(T):
+                    intersectionRight = getLineIntersection(event.edge1, T[i+1])
+                    if intersectionRight is not None:
+                        # insert in Q
+                        heappush(Q, Event(intersectionRight, event.edge1, T[i+1], INTERSECT))
+                
+            elif event.type == END:
+                i = bisect.bisect_left(T, event.vertex)
+                if event.edge2 == T[i]:
+                    i -= 1
+                if event.edge1 != T[i]:
+                    raise Exception("Assumption violated")
+                del T[i]
+                if i-1 >= 0 and i < len(T):
+                    intersectionNeighbors = getLineIntersection(T[i-1], T[i])
+                    if intersectionNeighbors is not None and intersectionNeighbors.y > event.vertex.y:
+                        # insert in Q
+                        heappush(Q, Event(intersectionNeighbors, T[i-1], T[i], INTERSECT))
+                
+            elif event.type == INTERSECT:
+                i = bisect.bisect_left(T, event.vertex)
+                if event.edge2 == T[i]:
+                    i -= 1
+                if event.edge1 != T[i]:
+                    raise Exception("Assumption violated")
+                if i+1 >= len(T):
+                    print i
+                    print T
+                    print event
+                T[i], T[i+1] = T[i+1], T[i]
+                
+                if i - 1 >= 0:
+                    intersectionLeft = getLineIntersection(T[i-1], T[i])
+                    if intersectionLeft is not None:
+                        # insert in Q
+                        heappush(Q, Event(intersectionLeft, T[i-1], T[i], INTERSECT))
+                        
+                if i + 2 < len(T):
+                    intersectionRight = getLineIntersection(T[i+1], T[i+2])
+                    if intersectionRight is not None:
+                        # insert in Q
+                        heappush(Q, Event(intersectionRight, T[i+1], T[i+2], INTERSECT))
+                
+                numIntersections += 1
+                
+            else:
+                raise ValueError('Only START, END and INTERSECT events are supported.')
+        
+        return numIntersections
             
     def plot(self):
         import matplotlib.pyplot as plt
