@@ -6,11 +6,12 @@ from greedy_spanner import greedy_spanner, greedy_theta_spanner
 from yao import yao_graph
 from theta import theta_graph
 from datatypes import Graph
+from WSPD import wspd_spanner
 
 from data.train_stations import train_stations_by_label_luxembourg, train_stations_by_label_netherlands
 
 DO_ONLY_GRAPHS = []
-DO_ONLY_ALGOS = ['Theta', 'Yao', 'Greedy Theta']
+DO_ONLY_ALGOS = ['Theta', 'Yao', 'Greedy Theta', 'WSPD', 'Greedy']
 DO_ONLY_DILATIONS = []
 
 # First generate the graphs
@@ -31,8 +32,8 @@ if DO_ONLY_GRAPHS:
     GRAPHS = {k: v for k, v in GRAPHS.iteritems() if k in DO_ONLY_GRAPHS}
 
 # Algorithms
-ALGOS = {"Greedy": greedy_spanner, "Greedy Theta": greedy_theta_spanner, "Yao": yao_graph, "Theta": theta_graph}
-ALGO_MAX_SIZE = {"Greedy": 450, "Greedy Theta": 1000, "Yao": 3000, "Theta": 3000}
+ALGOS = {"Greedy": greedy_spanner, "Greedy Theta": greedy_theta_spanner, "Yao": yao_graph, "Theta": theta_graph, "WSPD": wspd_spanner}
+ALGO_MAX_SIZE = {"Greedy": 250, "Greedy Theta": 250, "Yao": 250, "Theta": 250, "WSPD": 250}
 if DO_ONLY_ALGOS:
     ALGOS = {k: v for k, v in ALGOS.iteritems() if k in DO_ONLY_ALGOS}
 
