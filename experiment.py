@@ -11,7 +11,7 @@ from WSPD import wspd_spanner
 from data.train_stations import train_stations_by_label_luxembourg, train_stations_by_label_netherlands
 
 DO_ONLY_GRAPHS = []
-DO_ONLY_ALGOS = ['Theta', 'Yao', 'Greedy Theta', 'WSPD', 'Greedy']
+DO_ONLY_ALGOS = []
 DO_ONLY_DILATIONS = []
 
 # First generate the graphs
@@ -33,12 +33,12 @@ if DO_ONLY_GRAPHS:
 
 # Algorithms
 ALGOS = {"Greedy": greedy_spanner, "Greedy Theta": greedy_theta_spanner, "Yao": yao_graph, "Theta": theta_graph, "WSPD": wspd_spanner}
-ALGO_MAX_SIZE = {"Greedy": 250, "Greedy Theta": 250, "Yao": 250, "Theta": 250, "WSPD": 250}
+ALGO_MAX_SIZE = {"Greedy": 450, "Greedy Theta": 3000, "Yao": 3000, "Theta": 3000, "WSPD": 2000}
 if DO_ONLY_ALGOS:
     ALGOS = {k: v for k, v in ALGOS.iteritems() if k in DO_ONLY_ALGOS}
 
 # Dilation ratios
-RATIOS = (1.1, 1.2, 1.3, 1.5, 1.75, 2, 2.5, 3, 4, 5)
+RATIOS = (1.1, 1.2, 1.3, 1.5, 2, 3, 5)
 if DO_ONLY_DILATIONS:
     RATIOS = [d for d in RATIOS if d in DO_ONLY_DILATIONS]
     
@@ -52,7 +52,7 @@ if "idlelib" not in sys.modules:
 # Prepare Excel file
 log_wb = openpyxl.load_workbook(LOG_CONTAINER)
 log_ws = log_wb.create_sheet(0, LOG_NAME)
-for col, txt in enumerate(("Graph", "#Vertices", "Algorithm", "Required dilation ratio", "Actual dilation ratio", "#Edges", "Total edge weight", "Max edge degree", "Diameter", "Running time")):
+for col, txt in enumerate(("Graph", "#Vertices", "Algorithm", "Required dilation ratio", "Actual dilation ratio", "#Edges", "Total edge weight", "Max edge degree", "Diameter", "#Intersections", "Running time")):
     log_ws.cell(None, 0, col).value = txt
 
 run_nr = 1  
@@ -69,7 +69,7 @@ for g_name, g in GRAPHS.iteritems():
             algo(g, ratio)
             t_elapsed = time.clock() - t_start
             
-            for col, txt in enumerate((g_name, g.n_vertices(), algo_name, ratio, g.dilation_ratio(), g.n_edges(), g.weight(), g.max_edge_degree(), g.diameter(), t_elapsed)):
+            for col, txt in enumerate((g_name, g.n_vertices(), algo_name, ratio, g.dilation_ratio(), g.n_edges(), g.weight(), g.max_edge_degree(), 0, 0, t_elapsed)): # Replace 0, 0 with g.diameter() and the intersections function to also compute these metrics
                 log_ws.cell(None, run_nr, col).value = txt
             
             g.clear_edges()
