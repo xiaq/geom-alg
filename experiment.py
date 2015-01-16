@@ -1,13 +1,17 @@
 import time
-import csv
+import openpyxl
 import sys
 
-from greedy_spanner import greedy_spanner
+from greedy_spanner import greedy_spanner, greedy_theta_spanner
 from yao import yao_graph
 from theta import theta_graph
 from datatypes import Graph
 
 from data.train_stations import train_stations_by_label_luxembourg, train_stations_by_label_netherlands
+
+DO_ONLY_GRAPHS = []
+DO_ONLY_ALGOS = ['Theta', 'Yao', 'Greedy Theta']
+DO_ONLY_DILATIONS = []
 
 # First generate the graphs
 GRAPHS = {}
@@ -19,23 +23,39 @@ GRAPHS["Train stations NL"] = Graph.datapoints_graph([v for k, v in train_statio
 #Train stations Luxembourg
 GRAPHS["Train stations LUX"] = Graph.datapoints_graph([v for k, v in train_stations_by_label_luxembourg.iteritems() if v is not None])
 #Our own data challenge
-GRAPHS["Our data challenge"] = Graph.from_data_challenge("data/data challenge.txt")
+GRAPHS["Our data challenge"] = Graph.from_data_challenge("data/data challenge.txt")[0]
 for n in range(1,7): #(1..6)
     GRAPHS["Data challenge %d" % n] = Graph.from_data_challenge("data/B%d.txt" % n)[0]
 
+if DO_ONLY_GRAPHS:
+    GRAPHS = {k: v for k, v in GRAPHS.iteritems() if k in DO_ONLY_GRAPHS}
+
 # Algorithms
-ALGOS = {"Greedy": greedy_spanner, "Yao": yao_graph, "Theta": theta_graph}
-ALGO_MAX_SIZE = {"Greedy": 350, "Yao": 3000, "Theta": 3000}
+ALGOS = {"Greedy": greedy_spanner, "Greedy Theta": greedy_theta_spanner, "Yao": yao_graph, "Theta": theta_graph}
+ALGO_MAX_SIZE = {"Greedy": 450, "Greedy Theta": 1000, "Yao": 3000, "Theta": 3000}
+if DO_ONLY_ALGOS:
+    ALGOS = {k: v for k, v in ALGOS.iteritems() if k in DO_ONLY_ALGOS}
 
 # Dilation ratios
-RATIOS = (1.3, 1.5, 1.75, 2, 2.5, 3, 4, 5)
+RATIOS = (1.1, 1.2, 1.3, 1.5, 1.75, 2, 2.5, 3, 4, 5)
+if DO_ONLY_DILATIONS:
+    RATIOS = [d for d in RATIOS if d in DO_ONLY_DILATIONS]
+    
+LOG_CONTAINER = "experiment log.xlsx"
+LOG_NAME = "Run of %s" % time.strftime("%a %m-%d %H.%M.%S")
 
-sys.stderr = open("stderr.txt", "a")
-LOG_FILE = "experiment_log.csv"
+# See if we're running from IDLE, if not, open a stderr text file
+if "idlelib" not in sys.modules:
+    sys.stderr = open("stderr.txt", "a")
 
-with open(LOG_FILE, 'w') as f:
-    writer = csv.writer(f)
-    writer.writerow(("Graph", "#Vertices", "Algorithm", "Required dilation ratio", "Actual dilation ratio", "#Edges", "Total edge weight", "Max edge degree", "Diameter", "Running time"))
+# Prepare Excel file
+log_wb = openpyxl.load_workbook(LOG_CONTAINER)
+log_ws = log_wb.create_sheet(0, LOG_NAME)
+for col, txt in enumerate(("Graph", "#Vertices", "Algorithm", "Required dilation ratio", "Actual dilation ratio", "#Edges", "Total edge weight", "Max edge degree", "Diameter", "Running time")):
+    log_ws.cell(None, 0, col).value = txt
+
+run_nr = 1  
+n_graphs_done = 0
 
 for g_name, g in GRAPHS.iteritems():
     for algo_name, algo in ALGOS.iteritems():
@@ -48,9 +68,14 @@ for g_name, g in GRAPHS.iteritems():
             algo(g, ratio)
             t_elapsed = time.clock() - t_start
             
-            with open(LOG_FILE, 'a') as f:
-                writer = csv.writer(f)
-                writer.writerow((g_name, g.n_vertices(), algo_name, ratio, g.dilation_ratio(), g.n_edges(), g.weight(), g.max_edge_degree(), g.diameter(), t_elapsed))
+            for col, txt in enumerate((g_name, g.n_vertices(), algo_name, ratio, g.dilation_ratio(), g.n_edges(), g.weight(), g.max_edge_degree(), g.diameter(), t_elapsed)):
+                log_ws.cell(None, run_nr, col).value = txt
             
             g.clear_edges()
+            run_nr += 1
             print "Completed", g_name, algo_name, ratio
+            
+        log_wb.save(LOG_CONTAINER)
+    
+    n_graphs_done += 1
+    print "COMPLETED PROCESSING %d OUT OF %d GRAPHS" % (n_graphs_done, len(GRAPHS))

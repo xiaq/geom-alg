@@ -128,8 +128,8 @@ class Graph(object):
             
         return ((edge.other(vertex), edge.length) for edge in self.edges[v_idx])
         
-    def iter_closest_euclidian_node_pairs(self):
-        """Returns an iterator for all pairs of nodes, sorted on actual euclidian distance
+    def closest_euclidian_node_pairs(self):
+        """Returns numpy arrays for all pairs of nodes, sorted on actual euclidian distance
         between these two nodes. Does not take edges of the graph into account.
         
         Running time is O(n*n*log(n))"""
@@ -150,6 +150,23 @@ class Graph(object):
                 i += 1
                 
         sorted_idxs = all_distances_sq.argsort()
+        return sorted_idxs, index_pair
+        
+    def shortest_edges(self):
+        """Returns numpy arrays containing all edge lengths, sorted from
+        shortest to longest."""
+        
+        from numpy import empty
+        
+        n_edges = self.n_edges()
+        all_lengths_sq = empty(n_edges)
+        index_pair = empty((n_edges, 2))
+        
+        for i, edge in enumerate(self.iter_edges()):
+            all_lengths_sq[i] = edge.length_sq
+            index_pair[i] = edge.v1.id, edge.v2.id
+            
+        sorted_idxs = all_lengths_sq.argsort()
         return sorted_idxs, index_pair
         
     def closest_neighbor(self, vertex):
@@ -305,7 +322,7 @@ class Graph(object):
         
         return 0 # Not implemented
             
-    def plot(self):
+    def plot(self, transpose=False):
         import matplotlib.pyplot as plt
         
         # Plot edges
@@ -313,22 +330,29 @@ class Graph(object):
         xlist = []
         ylist = []
         for e in self.iter_edges():
-            xlist.extend([e.v1.x, e.v2.x])
-            xlist.append(None)
-            ylist.extend([e.v1.y, e.v2.y])
-            ylist.append(None)
-            
-        plt.plot(xlist, ylist)
+            xlist.extend([e.v1.x, e.v2.x, None])
+            ylist.extend([e.v1.y, e.v2.y, None])
+
+        if transpose:
+            plt.plot(ylist, xlist)
+        else:
+            plt.plot(xlist, ylist)
             
         # Plot vertices
         coords = list((v.x, v.y) for v in self.iter_vertices())
         x, y = zip(*coords)
-        plt.scatter(x, y)
+        if transpose:
+            plt.scatter(y, x)
+        else:
+            plt.scatter(x, y)
 
         # Plot vertex labels
         for vertex in self.iter_vertices():
             if vertex.label:
-                plt.annotate(vertex.label, (vertex.x, vertex.y))
+                if transpose:
+                    plt.annotate(vertex.label, (vertex.y, vertex.x))
+                else:
+                    plt.annotate(vertex.label, (vertex.x, vertex.y))
 
         plt.show()
         
