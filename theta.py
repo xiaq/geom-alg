@@ -28,14 +28,16 @@ def theta_graph(graph, dilation):
             b = bisectors[c]
             d = (u.x - v.x) * b[0] + (u.y - v.y) * b[1]
             if d <= 0:
-                raise Exception('d <= 0!')
+                print 'Abnormality in theta-graph:'
+                print 'u = %r, v = %r, b = %r, d = %r' % (u, v, b, d)
+                print '(Continuing anyway)'
             if ts[c] is None or ts[c][0] > d:
                 ts[c] = (d, u)
 
         for t in ts:
             if t is None:
                 continue
-            graph.add_edge(v, t[1])
+            graph.add_edge(v, t[1], True)
 
 if __name__ == "__main__":
     import random
