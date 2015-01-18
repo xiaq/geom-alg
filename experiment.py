@@ -18,15 +18,15 @@ DO_ONLY_DILATIONS = []
 GRAPHS = {}
 #Random graphs
 for n in range(25, 351, 25):
-    GRAPHS["Random %d" % n] = Graph.from_data_challenge("data/random %d.txt" % n)[0]
+    GRAPHS["Random %d" % n] = Graph.from_data_challenge("data/random %d.txt" % n, removeDuplicates = True)[0]
 #Train stations NL
-GRAPHS["Train stations NL"] = Graph.datapoints_graph([v for k, v in train_stations_by_label_netherlands.iteritems() if v is not None])
+GRAPHS["Train stations NL"] = Graph.datapoints_graph([v for k, v in train_stations_by_label_netherlands.iteritems() if v is not None], removeDuplicates = True)
 #Train stations Luxembourg
-GRAPHS["Train stations LUX"] = Graph.datapoints_graph([v for k, v in train_stations_by_label_luxembourg.iteritems() if v is not None])
+GRAPHS["Train stations LUX"] = Graph.datapoints_graph([v for k, v in train_stations_by_label_luxembourg.iteritems() if v is not None], removeDuplicates = True)
 #Our own data challenge
-GRAPHS["Our data challenge"] = Graph.from_data_challenge("data/data challenge.txt")[0]
+GRAPHS["Our data challenge"] = Graph.from_data_challenge("data/data challenge.txt", removeDuplicates = True)[0]
 for n in range(1,7): #(1..6)
-    GRAPHS["Data challenge %d" % n] = Graph.from_data_challenge("data/B%d.txt" % n)[0]
+    GRAPHS["Data challenge %d" % n] = Graph.from_data_challenge("data/B%d.txt" % n, removeDuplicates = True)[0]
 
 if DO_ONLY_GRAPHS:
     GRAPHS = {k: v for k, v in GRAPHS.iteritems() if k in DO_ONLY_GRAPHS}

@@ -515,8 +515,11 @@ class Graph(object):
         return g
 
     @classmethod
-    def datapoints_graph(cls, points, limit=None):
+    def datapoints_graph(cls, points, limit=None, removeDuplicates=None):
         g = cls()
+        
+        if removeDuplicates:
+            points = list(set(points))
 
         for p in points:
             if limit and g.n_vertices() >= limit:
@@ -537,21 +540,32 @@ class Graph(object):
         return g
         
     @classmethod
-    def from_data_challenge(cls, filename):
+    def from_data_challenge(cls, filename, removeDuplicates=None):
         g = cls()
         
         with open(filename, "r") as f:
             nr_points = int(f.readline().strip("\r\n"))
             ratio_a_b = map(int, f.readline().strip("\r\n").split())
             
+            points = set()
+            numPointsRead = 0
             for line in f.readlines():
                 if not line:
                     continue
                     
                 x, y = map(float, line.strip("\r\n").split())
-                g.add_vertex(x,y)
+                points.add((x,y))
+                numPointsRead += 1
+            
+            if removeDuplicates:
+                points = list(set(points))
+            
+            for p in points:
+                g.add_vertex(p[0],p[1])
                 
-        if g.n_vertices() != nr_points:
+        if numPointsRead != g.n_vertices():
+            print "Warning: there are %s points removed from file '%s' because of duplicate points. There are %s points left." % (numPointsRead - g.n_vertices(), filename, g.n_vertices())
+        elif numPointsRead != nr_points:
             print "Warning: there should be %s points but %s were read from the file." % (nr_points, g.n_vertices())
             
         return g, float(ratio_a_b[0]) / float(ratio_a_b[1])
