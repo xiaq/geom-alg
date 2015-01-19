@@ -63,6 +63,9 @@ def getLineIntersection(edge1, edge2):
     s2_x = p3_x - p2_x
     s2_y = p3_y - p2_y
 
+    if -s2_x * s1_y + s1_x * s2_y == 0:
+        return None #parallel lines
+
     try:
         s = (-s1_y * (p0_x - p2_x) + s1_x * (p0_y - p2_y)) / float(-s2_x * s1_y + s1_x * s2_y)
         t = ( s2_x * (p0_y - p2_y) - s2_y * (p0_x - p2_x)) / float(-s2_x * s1_y + s1_x * s2_y)
@@ -373,7 +376,6 @@ class Graph(object):
         Returns the number of intersections of the graph using a brute force way.
         """
         numIntersections = 0
-        print len(list(self.iter_edges()))
         for edge1 in self.iter_edges():
             for edge2 in self.iter_edges():
                 if edge1.v1.id >= edge2.v1.id:
