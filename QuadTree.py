@@ -161,18 +161,20 @@ class QuadTree(object):
         return q
 
 def bounding_box(points):
-    """Returns a dictionary of the minimal and maximum x and y-coordinate of the points."""
-        
-    return {'xMin': min(p.x for p in points),
-            'yMin': min(p.y for p in points),
-            'xMax': max(p.x for p in points),
-            'yMax': max(p.y for p in points)}
+    """Returns the bounding box of the points with 4 values:
+        0: minimum x-coordinate
+        1: maximum x-coordinate
+        2: minimum y-coordinate
+        3: maximum y-coordiante
+    """
+
+    return min(p.x for p in points), max(p.x for p in points), min(p.y for p in points),  max(p.y for p in points)
 
 def createQuadTree(points):
     """Create a quadtree of the points with extra free space in every direction."""
     
     bb = bounding_box(points)
-    lengthLongestDimension = max(bb['xMax'] - bb['xMin'], bb['yMax'] - bb['yMin'])
-    boundary = Boundary(float(bb['xMin'] + bb['xMax'])/2, float(bb['yMin'] + bb['yMax'])/2, lengthLongestDimension/float(5)*3, BoundaryType.Root)
+    lengthLongestDimension = max(bb[1] - bb[0], bb[3] - bb[2])
+    boundary = Boundary(float(bb[0] + bb[1])/2, float(bb[2] + bb[3])/2, lengthLongestDimension/float(5)*3, BoundaryType.Root)
 
     return QuadTree(None, boundary, points)

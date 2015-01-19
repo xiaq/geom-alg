@@ -28,11 +28,11 @@ def is_well_separated(u, v, s):
     bbU = bounding_box(u.points)
     bbV = bounding_box(v.points)
 
-    centerU = Point((bbU['xMin'] + bbU['xMax'])/float(2), (bbU['yMin'] + bbU['yMax'])/float(2))
-    radiusU = dist(centerU, Point(bbU['xMin'], bbU['yMin']))
+    centerU = Point((bbU[0] + bbU[1])/float(2), (bbU[2] + bbU[3])/float(2))
+    radiusU = dist(centerU, Point(bbU[0], bbU[2]))
     
-    centerV = Point((bbV['xMin'] + bbV['xMax'])/float(2), (bbV['yMin'] + bbV['yMax'])/float(2))
-    radiusV = dist(centerV, Point(bbV['xMin'], bbV['yMin']))
+    centerV = Point((bbV[0] + bbV[1])/float(2), (bbV[2] + bbV[3])/float(2))
+    radiusV = dist(centerV, Point(bbV[0], bbV[2]))
 
     distUV = dist(centerU, centerV) - radiusU - radiusV
 
@@ -126,7 +126,7 @@ Point(15.6036472629,8.23681644359)]
 g = Graph()
 for p in points:
     g.add_vertex(p.x, p.y)
-
+"""
 g2 = Graph.random_graph(700, 0)
 
 import time
@@ -136,6 +136,3 @@ wspd_spanner(g2, dilation = 3)
 t_elapsed = time.clock() - t_start
 
 print t_elapsed
-
-print g2.numDoubleEdges
-"""
